@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: E-Commerce
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/amazon
+    username: root
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 9091
+
+# Add the secreteJwtString property here
+jwt:
+  secreteJwtString: UoQ-_z05DFTaWa0LShvBPDADeyvuQ7vx
