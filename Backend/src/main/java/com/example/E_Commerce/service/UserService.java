@@ -5,6 +5,7 @@ import com.example.E_Commerce.dto.Response;
 import com.example.E_Commerce.dto.UserDto;
 import com.example.E_Commerce.entity.User;
 
+
 public interface UserService {
 
     Response registerUser(UserDto registrationRequest);
