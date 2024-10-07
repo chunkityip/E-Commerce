@@ -5,6 +5,8 @@ import com.example.E_Commerce.dto.Response;
 import com.example.E_Commerce.dto.UserDto;
 import com.example.E_Commerce.entity.User;
 import com.example.E_Commerce.enums.UserRole;
+import com.example.E_Commerce.exception.InvalidCredentialsException;
+import com.example.E_Commerce.exception.NotFoundException;
 import com.example.E_Commerce.mapper.EntityDtoMapper;
 import com.example.E_Commerce.repository.UserRepo;
 import com.example.E_Commerce.security.JwtUtils;
@@ -54,8 +56,22 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response loginUser(LoginRequest loginRequest) {
-        return null;
+
+        User user = userRepo.findByEmail(loginRequest.getEmail()).orElseThrow(()-> new NotFoundException("Email not found"));
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())){
+            throw new InvalidCredentialsException("Password does not match");
+        }
+        String token = jwtUtils.generateToken(user);
+
+        return Response.builder()
+                .status(200)
+                .message("User log in successfully")
+                .token(token)
+                .expirationTime("6 Month")
+                .role(user.getRole().name())
+                .build();
     }
+
 
     @Override
     public Response getAllUser(UserDto registrationRequest) {
