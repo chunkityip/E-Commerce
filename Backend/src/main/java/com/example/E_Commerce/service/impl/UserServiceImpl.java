@@ -13,6 +13,9 @@ import com.example.E_Commerce.security.JwtUtils;
 import com.example.E_Commerce.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -91,7 +94,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getLoginUser() {
-        return null;
+        Authentication authentication = SecurityContextHolder
+                .getContext().getAuthentication();
+
+        String email = authentication.getName();
+        log.info("User email is " + email);
+        return userRepo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     @Override
