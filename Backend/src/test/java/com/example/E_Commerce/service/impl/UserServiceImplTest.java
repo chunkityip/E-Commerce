@@ -3,6 +3,7 @@ package com.example.E_Commerce.service.impl;
 import com.example.E_Commerce.dto.LoginRequest;
 import com.example.E_Commerce.dto.Response;
 import com.example.E_Commerce.dto.UserDto;
+import com.example.E_Commerce.entity.OrderItem;
 import com.example.E_Commerce.entity.User;
 import com.example.E_Commerce.enums.UserRole;
 import com.example.E_Commerce.exception.InvalidCredentialsException;
@@ -32,7 +33,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
@@ -59,6 +60,7 @@ class UserServiceImplTest {
 
     private UserDto userDto;
     private User user;
+    private OrderItem orderItem;
 
     @BeforeEach
     void setUp() {
@@ -222,4 +224,33 @@ class UserServiceImplTest {
                 () -> assertEquals(UserRole.USER, result.getRole(), "User role should match")  // Add role assertion if applicable
         );
     }
+
+    @Test
+    void getUserInfoAndOrderHistoryTest() {
+        // Arrange
+        // Stub
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        when(authentication.getName()).thenReturn(user.getEmail());
+
+        when(userRepo.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+
+        when(entityDtoMapper.mapUserToDtoPlusAddressAndOrderHistory(user)).thenReturn(userDto);
+
+        // Act
+        Response response = userService.getUserInfoAndOrderHistory();
+
+        // Assert
+        assertAll(
+                () -> assertEquals(200, response.getStatus(), "Status should match as 200"),
+                () -> assertEquals(userDto, response.getUser())
+        );
+
+        // Verify
+        verify(userRepo , times(1)).findByEmail(user.getEmail());
+        verify(entityDtoMapper, times(1)).mapUserToDtoPlusAddressAndOrderHistory(user);
+    }
+
 }
