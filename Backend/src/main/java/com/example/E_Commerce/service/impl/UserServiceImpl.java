@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -75,7 +77,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response getAllUser(UserDto registrationRequest) {
-        return null;
+        List<User> users = userRepo.findAll();
+        List<UserDto> userDto = users.stream()
+                .map(entityDtoMapper::mapUserToDtoBasic)
+                .toList();
+
+        return Response.builder()
+                .status(200)
+                .message("Successful")
+                .userList(userDto)
+                .build();
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.example.E_Commerce.mapper.EntityDtoMapper;
 import com.example.E_Commerce.repository.UserRepo;
 import com.example.E_Commerce.security.JwtUtils;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -30,8 +32,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceImplTest {
-    //Mock
+class UserServiceTest {
+
+    private UserServiceImpl userService;
+
     @Mock
     private UserRepo userRepo;
 
@@ -39,59 +43,49 @@ class UserServiceImplTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private EntityDtoMapper entityDtoMapper;
-
-    @Mock
     private JwtUtils jwtUtils;
 
-    //Inject
-    @InjectMocks
-    private UserServiceImpl userService;
+    @Mock
+    private EntityDtoMapper entityDtoMapper;
 
-    // Method to have different user role (null , admin and user)
-    static Stream<Arguments> provideUserRoles() {
-        return Stream.of(
-                Arguments.of("user", UserRole.USER),
-                Arguments.of("admin", UserRole.ADMIN),
-                Arguments.of(null, UserRole.USER)
-        );
+    private UserDto userDto;
+    private User user;
+
+    @BeforeEach
+    void setUp() {
+        // Initialize UserDto
+        userDto = new UserDto();
+        userDto.setName("CK");
+        userDto.setEmail("yck11214@gmail.com");
+        userDto.setPassword("12345");
+        userDto.setRole("user");
+
+        // Initialize User entity
+        user = User.builder()
+                .name("CK")
+                .email("yck11214@gmail.com")
+                .password("passwordEncoder")
+                .role(UserRole.USER)
+                .build();
+
+        // Initialize UserServiceImpl with mocks
+        userService = new UserServiceImpl(userRepo, passwordEncoder, jwtUtils, entityDtoMapper);
     }
-
 
     @ParameterizedTest
     @MethodSource("provideUserRoles")
     void registerUserWithDifferentRoles(String inputRole, UserRole expectedRole) {
-        //Arrange
-        UserDto request = new UserDto();
-        request.setName("CK");
-        request.setEmail("yck11214@gmail.com");
-        request.setPassword("12345");
-        request.setRole(inputRole);
+        // Arrange
+        userDto.setRole(inputRole);
+        user.setRole(expectedRole);
 
-        User user = User.builder()
-                .name("CK")
-                .email("yck11214@gmail.com")
-                .password("passwordEncoder")
-                .role(expectedRole)
-                .build();
-
-        UserDto mappedUser = new UserDto();
-        mappedUser.setName("CK");
-        mappedUser.setEmail("yck11214@gmail.com");
-
-
-        // Stub
-        when(passwordEncoder.encode("12345"))
-                .thenReturn("encodedPassword");
-
-        when(userRepo.save(any(User.class))).
-                thenReturn(user);
-
-        when(entityDtoMapper.mapUserToDtoBasic(user))
-                .thenReturn(mappedUser);
+        // Stub the mocks
+        when(passwordEncoder.encode("12345")).thenReturn("encodedPassword");
+        when(userRepo.save(any(User.class))).thenReturn(user);
+        when(entityDtoMapper.mapUserToDtoBasic(user)).thenReturn(userDto);
 
         // Act
-        Response response = userService.registerUser(request);
+        Response response = userService.registerUser(userDto);
 
         // Assert
         assertAll(
@@ -105,83 +99,48 @@ class UserServiceImplTest {
     void userEmailNotFound() {
         // Arrange
         String invalidEmail = "y@gmail.com";
-
-        // Mock the repository to throw NotFoundException when the email is not found
-        when(userRepo.findByEmail(invalidEmail))
-                .thenThrow(new NotFoundException("Email not found"));
-
+        when(userRepo.findByEmail(invalidEmail)).thenThrow(new NotFoundException("Email not found"));
 
         // Act
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail(invalidEmail);
 
         // Assert
-        assertThrows(NotFoundException.class, () ->
-                userService.loginUser(loginRequest));
+        assertThrows(NotFoundException.class, () -> userService.loginUser(loginRequest));
     }
 
     @Test
     void passwordNotMatch() {
         // Arrange
-        String email = "y@gmail.com";
-        String inCorrectPassword = ("4321");
-        String correctPassword = ("4321");
-        String encodedPassword = passwordEncoder.encode(correctPassword);
+        String incorrectPassword = "wrongPassword";
+        when(userRepo.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(incorrectPassword, user.getPassword())).thenReturn(false);
 
-        User user = User.builder()
-                .email(email)
-                .password(passwordEncoder.encode(encodedPassword))
-                .role(UserRole.USER)
-                .build();
-
-
+        // Act
         LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setEmail(email);
-        loginRequest.setPassword(correctPassword);
-
-
-        when(userRepo.findByEmail(email))
-                .thenReturn(Optional.of(user));
-
-        when(passwordEncoder.matches(inCorrectPassword, user.getPassword()))
-                .thenReturn(false);
-
+        loginRequest.setEmail(user.getEmail());
+        loginRequest.setPassword(incorrectPassword);
 
         // Assert
-        assertThrows(InvalidCredentialsException.class, () ->
-                userService.loginUser(loginRequest));
+        assertThrows(InvalidCredentialsException.class, () -> userService.loginUser(loginRequest));
     }
 
     @Test
     void loginUserWithCorrectEmailAndPassword() {
         // Arrange
-        String email = "y@gmail.com";
-        String correctPassword = "4321";  // This is the raw password that the user provides
-        String encodedPassword = passwordEncoder.encode(correctPassword);  // Encode the correct password
+        String correctPassword = "4321";
+        String encodedPassword = passwordEncoder.encode(correctPassword);
+        user.setPassword(encodedPassword);  // Set the encoded password in the user entity
 
-        // Create a User object with the encoded password
-        User user = User.builder()
-                .email(email)
-                .password(encodedPassword)  // Use the encoded password
-                .role(UserRole.USER)
-                .build();
-
-        // Create a LoginRequest with the raw password
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setEmail(email);
-        loginRequest.setPassword(correctPassword);  // Set the raw password for comparison
-
-        // Mock the JWT token generation
-        String token = "mocked-jwt-token";
-        when(jwtUtils.generateToken(user)).thenReturn(token);
-
-        // Mock the userRepo to return the user when the email is found
-        when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
-
-        // ** Mock the passwordEncoder's matches method to return true
+        when(userRepo.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(correctPassword, encodedPassword)).thenReturn(true);
+        when(jwtUtils.generateToken(user)).thenReturn("mocked-jwt-token");
 
         // Act
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail(user.getEmail());
+        loginRequest.setPassword(correctPassword);
+
         Response response = userService.loginUser(loginRequest);
 
         // Assert
@@ -189,6 +148,32 @@ class UserServiceImplTest {
                 () -> assertEquals(200, response.getStatus()),
                 () -> assertEquals("User log in successfully", response.getMessage()),
                 () -> assertEquals("USER", response.getRole())
+        );
+    }
+
+    @Test
+    void getAllUserTest() {
+        // Arrange
+        List<User> users = List.of(user);
+        when(userRepo.findAll()).thenReturn(users);
+        when(entityDtoMapper.mapUserToDtoBasic(user)).thenReturn(userDto);
+
+        // Act
+        Response response = userService.getAllUser(userDto);
+
+        // Assert
+        assertAll(
+                () -> assertEquals(200, response.getStatus()),
+                () -> assertEquals("Successful", response.getMessage()),
+                () -> assertEquals(1, response.getUserList().size())
+        );
+    }
+
+    static Stream<Arguments> provideUserRoles() {
+        return Stream.of(
+                Arguments.of("user", UserRole.USER),
+                Arguments.of("admin", UserRole.ADMIN),
+                Arguments.of(null, UserRole.USER)
         );
     }
 }
