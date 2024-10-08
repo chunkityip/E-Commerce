@@ -20,6 +20,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -27,12 +31,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceTest {
+class UserServiceImplTest {
 
     private UserServiceImpl userService;
 
@@ -47,6 +50,12 @@ class UserServiceTest {
 
     @Mock
     private EntityDtoMapper entityDtoMapper;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private SecurityContext securityContext;
 
     private UserDto userDto;
     private User user;
@@ -89,9 +98,9 @@ class UserServiceTest {
 
         // Assert
         assertAll(
-                () -> assertEquals(200, response.getStatus()),
-                () -> assertEquals("User successfully added", response.getMessage()),
-                () -> assertEquals(expectedRole, user.getRole())
+                () -> assertEquals(200, response.getStatus(), "Status should match as 200"),
+                () -> assertEquals("User successfully added", response.getMessage() , "Message should display as: User successfully added"),
+                () -> assertEquals(expectedRole, user.getRole() , "Role should match")
         );
     }
 
@@ -145,9 +154,9 @@ class UserServiceTest {
 
         // Assert
         assertAll(
-                () -> assertEquals(200, response.getStatus()),
-                () -> assertEquals("User log in successfully", response.getMessage()),
-                () -> assertEquals("USER", response.getRole())
+                () -> assertEquals(200, response.getStatus() , "Status should match as 200"),
+                () -> assertEquals("User log in successfully", response.getMessage() , "Message should display as Successful"),
+                () -> assertEquals("USER", response.getRole(), "Role should match as USER")
         );
     }
 
@@ -163,9 +172,9 @@ class UserServiceTest {
 
         // Assert
         assertAll(
-                () -> assertEquals(200, response.getStatus()),
-                () -> assertEquals("Successful", response.getMessage()),
-                () -> assertEquals(1, response.getUserList().size())
+                () -> assertEquals(200, response.getStatus() , "Status should match as 200"),
+                () -> assertEquals("Successful", response.getMessage() , "Message should display as Successful"),
+                () -> assertEquals(1, response.getUserList().size(), "Size should match as size 1")
         );
     }
 
@@ -174,6 +183,43 @@ class UserServiceTest {
                 Arguments.of("user", UserRole.USER),
                 Arguments.of("admin", UserRole.ADMIN),
                 Arguments.of(null, UserRole.USER)
+        );
+    }
+
+    @Test
+    void getLoginUserNameNotFound() {
+        String email = "unknown@example.com";
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(authentication.getName()).thenReturn(email);
+
+        when(userRepo.findByEmail(any()))
+                .thenThrow(new UsernameNotFoundException("User not found"));
+
+        assertThrows(UsernameNotFoundException.class , () ->
+                userService.getLoginUser());
+    }
+
+    @Test
+    void getLoginUserWithCorrectEmail() {
+        String email = "yck11214@gmail.com";
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(authentication.getName()).thenReturn(email);
+
+        when(userRepo.findByEmail(email))
+                .thenReturn(Optional.of(user));
+
+        User result = userService.getLoginUser();
+
+        assertAll(
+                () -> assertEquals("CK", result.getName(), "User name should match"),
+                () -> assertEquals(email, result.getEmail(), "User email should match"),
+                () -> assertEquals(UserRole.USER, result.getRole(), "User role should match")  // Add role assertion if applicable
         );
     }
 }
