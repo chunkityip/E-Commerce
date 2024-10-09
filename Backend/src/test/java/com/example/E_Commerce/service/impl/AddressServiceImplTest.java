@@ -8,9 +8,11 @@ import com.example.E_Commerce.repository.AddressRepo;
 import com.example.E_Commerce.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +20,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+
+@ExtendWith(MockitoExtension.class)
 class AddressServiceImplTest {
 
     @Mock
@@ -40,16 +48,14 @@ class AddressServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
         // Mock SecurityContext and Authentication
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
+//        when(securityContext.getAuthentication()).thenReturn(authentication);
+//        SecurityContextHolder.setContext(securityContext);
 
         // Mock the authenticated user's email
-        when(authentication.getName()).thenReturn("test@example.com");
+//        when(authentication.getName()).thenReturn("test@example.com");
 
-        // Mock the UserService to return a logged-in user
+        // Create and configure the user
         user = new User();
         user.setEmail("test@example.com");
         when(userService.getLoginUser()).thenReturn(user);
@@ -57,24 +63,23 @@ class AddressServiceImplTest {
 
     @Test
     void saveAddressTest() {
+        // Create AddressDto with test data
         addressDto = new AddressDto();
-        user = new User();
-
         addressDto.setStreet("123 Main St");
         addressDto.setCity("CityVille");
         addressDto.setState("CA");
         addressDto.setZipCode("90001");
         addressDto.setCountry("USA");
 
-        user.setAddress(null);
+        user.setAddress(null); // Ensure the user has no address initially
 
-        when(userService.getLoginUser()).thenReturn(user);
-
+        // Act
         Response response = addressService.saveAndUpdateAddress(addressDto);
 
+        // Assert
         assertAll(
-                () -> assertEquals(200 , response.getStatus()),
-                () -> assertEquals("Address successfully created" , response.getMessage())
+                () -> assertEquals(200, response.getStatus()),
+                () -> assertEquals("Address successfully created", response.getMessage())
         );
 
         verify(addressRepo, times(1)).save(any(Address.class));
@@ -86,9 +91,10 @@ class AddressServiceImplTest {
         addressDto = new AddressDto();
         addressDto.setStreet("1961 79th St");
 
+        // Create existing address for the user
         Address existAddress = new Address();
         existAddress.setStreet("Old St");
-        user.setAddress(existAddress);
+        user.setAddress(existAddress); // Set the existing address for the user
 
         // Stub
         when(userService.getLoginUser()).thenReturn(user);
@@ -98,12 +104,12 @@ class AddressServiceImplTest {
 
         // Assert
         assertAll(
-                () -> assertEquals(200, response.getStatus() , "Status should match"),
-                () -> assertEquals("Address successfully updated", response.getMessage()
-                , "message should match")
+                () -> assertEquals(200, response.getStatus(), "Status should match"),
+                () -> assertEquals("Address successfully updated", response.getMessage(), "Message should match")
         );
 
+        // Verify that save method was called and the street is updated
         verify(addressRepo, times(1)).save(any(Address.class));
-        assertEquals("1961 79th St", existAddress.getStreet() , "address should match");
+        assertEquals("1961 79th St", existAddress.getStreet(), "Address should match");
     }
 }
