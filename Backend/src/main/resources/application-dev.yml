@@ -23,3 +23,11 @@ server:
 # Add the secreteJwtString property here
 jwt:
   secreteJwtString: UoQ-_z05DFTaWa0LShvBPDADeyvuQ7vx
+
+aws:
+  s3:
+    # This is awsS3 AccessKey
+    access:
+    # This is awsS3 SecreteKey
+    secrete:
+
