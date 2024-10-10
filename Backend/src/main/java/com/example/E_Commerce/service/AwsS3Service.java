@@ -9,6 +9,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import io.github.pixee.security.Filenames;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class AwsS3Service {
     // Using awsS3AccessKey and awsS3SecreteKey to store item photo
     public String saveImageToS3(MultipartFile photo) {
         try {
-            String s3FileName = photo.getOriginalFilename();
+            String s3FileName = Filenames.toSimpleFileName(photo.getOriginalFilename());
             //create AES credentials using the access and secrete key
             BasicAWSCredentials awsCredentials = new BasicAWSCredentials(awsS3AccessKey, awsS3SecreteKey);
 
