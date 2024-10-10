@@ -4,6 +4,7 @@ import com.example.E_Commerce.dto.CategoryDto;
 import com.example.E_Commerce.dto.Response;
 import com.example.E_Commerce.entity.Category;
 import com.example.E_Commerce.exception.NotFoundException;
+import com.example.E_Commerce.mapper.EntityDtoMapper;
 import com.example.E_Commerce.repository.CategoryRepo;
 import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +28,9 @@ class CategoryServiceImplTest {
 
     @InjectMocks
     private CategoryServiceImpl categoryService;
+
+    @Mock
+    private EntityDtoMapper entityDtoMapper;
 
     private Category category;
     private CategoryDto categoryDto;
@@ -98,8 +104,29 @@ class CategoryServiceImplTest {
     }
 
     @Test
-    void getAllCategoriesSuccessful() {
+    void getAllCategoriesSuccessfullWithTwoCategory() {
+        // Arrange
+        category = new Category();
+        Category category2 = new Category();
 
+        category.setName("CK");
+        category2.setName("Lawrence");
+
+        List<Category> categoryDtoList = List.of(category , category2);
+
+        // Stub
+        when(categoryRepo.findAll()).thenReturn(categoryDtoList);
+        when(entityDtoMapper.mapCategoryToDtoBasic(category)).thenReturn(categoryDto);
+
+        // Act
+        Response response = categoryService.getAllCategories();
+
+        // Assert
+        assertAll(
+                () -> assertEquals(200 , response.getStatus() , "Status should match"),
+                () -> assertEquals(2 , categoryDtoList.size() ,
+                        "The size should match since there has two Category")
+        );
     }
 
     @Test
