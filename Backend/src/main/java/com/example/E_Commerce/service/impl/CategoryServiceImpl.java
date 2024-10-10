@@ -64,17 +64,22 @@ public class CategoryServiceImpl implements CategoryService {
     public Response getCategoryById(Long categoryId) {
         Category category = categoryRepo.findById(categoryId)
                 .orElseThrow(() -> new NotFoundException("Category Not Found"));
-
         CategoryDto categoryDto = entityDtoMapper.mapCategoryToDtoBasic(category);
-
         return Response.builder()
                 .status(200)
-                .message("Category was deleted successfully")
+                .category(categoryDto)
                 .build();
     }
 
     @Override
     public Response deleteCategory(Long categoryId) {
-        return null;
+        Category category = categoryRepo.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category Not Found"));
+
+        categoryRepo.delete(category);
+        return Response.builder()
+                .status(200)
+                .message("Category was deleted successfully")
+                .build();
     }
 }

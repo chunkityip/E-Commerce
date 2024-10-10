@@ -7,6 +7,7 @@ import com.example.E_Commerce.exception.NotFoundException;
 import com.example.E_Commerce.mapper.EntityDtoMapper;
 import com.example.E_Commerce.repository.CategoryRepo;
 import jakarta.validation.constraints.NotNull;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -127,13 +128,111 @@ class CategoryServiceImplTest {
                 () -> assertEquals(2 , categoryDtoList.size() ,
                         "The size should match since there has two Category")
         );
+
+        verify(categoryRepo , times(1)).findAll();
     }
 
     @Test
-    void getCategoryById() {
+    void shouldThrowNotFoundExceptionWhenCategoryNotFound() {
+        // Arrange
+        Long incorrectId = 1L;
+
+        // Stub
+        when(categoryRepo.findById(incorrectId))
+                .thenThrow(new NotFoundException("Category Not Found"));
+
+        // Act
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> categoryService.getCategoryById(incorrectId));
+
+        assertEquals("Category Not Found" , exception.getMessage() ,
+                "The exception message should match");
+
+        // Verify
+        verify(categoryRepo , times(1)).findById(incorrectId);
     }
 
     @Test
-    void deleteCategory() {
+    void getCategorySuccessfullByCorrectId() {
+        // Arrange
+        Long correctId = 1L;
+
+        category = new Category();
+        category.setId(correctId);
+        category.setName("Electronics");
+
+        categoryDto = new CategoryDto();
+        categoryDto.setId(correctId);
+        categoryDto.setName("Electronics");
+
+        // Stub the repository and mapper
+        when(categoryRepo.findById(correctId)).thenReturn(Optional.of(category));
+        when(entityDtoMapper.mapCategoryToDtoBasic(category)).thenReturn(categoryDto);
+
+        // Act
+        Response response = categoryService.getCategoryById(correctId);
+
+        // Assert
+        assertAll(
+                () -> assertEquals(200 , response.getStatus(), "Status should match"),
+                () -> assertEquals(categoryDto , response.getCategory())
+        );
+
+        // Verify
+        verify(categoryRepo , times(1)).findById(correctId);
+        verify(entityDtoMapper, times(1)).mapCategoryToDtoBasic(category);
+    }
+
+
+    @Test
+    @DisplayName("Unable to delete category since Category Not Found")
+    void shouldThrowNotFundExceptionWhenCategoryDeleteFail() {
+        // Arrange
+        Long incorrectId = 1L;
+
+        // Stub
+        when(categoryRepo.findById(incorrectId))
+                .thenThrow(new NotFoundException("Category Not Found"));
+
+        // Act
+        NotFoundException exception = assertThrows(NotFoundException.class,
+                () -> categoryService.deleteCategory(incorrectId));
+
+        assertEquals("Category Not Found" , exception.getMessage() ,
+                "The exception message should match");
+
+        // Verify
+        verify(categoryRepo , times(1)).findById(incorrectId);
+    }
+
+    @Test
+    void deleteCategorySuccessfullByCorrectId() {
+        // Arrange
+        Long correctId = 1L;
+
+        category = new Category();
+        category.setId(correctId);
+        category.setName("Electronics");
+
+        categoryDto = new CategoryDto();
+        categoryDto.setId(correctId);
+        categoryDto.setName("Electronics");
+
+        // Stub the repository and mapper
+        when(categoryRepo.findById(correctId)).thenReturn(Optional.of(category));
+
+
+        // Act
+        Response response = categoryService.deleteCategory(correctId);
+
+        // Assert
+        assertAll(
+                () -> assertEquals(200 , response.getStatus(), "Status should match"),
+                () -> assertEquals("Category was deleted successfully" , response.getMessage(),
+                        "Message should match")
+        );
+
+        // Verify
+        verify(categoryRepo , times(1)).findById(correctId);
     }
 }
