@@ -10,6 +10,7 @@ import com.example.E_Commerce.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,7 +62,15 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Response getCategoryById(Long categoryId) {
-        return null;
+        Category category = categoryRepo.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category Not Found"));
+
+        CategoryDto categoryDto = entityDtoMapper.mapCategoryToDtoBasic(category);
+
+        return Response.builder()
+                .status(200)
+                .message("Category was deleted successfully")
+                .build();
     }
 
     @Override
