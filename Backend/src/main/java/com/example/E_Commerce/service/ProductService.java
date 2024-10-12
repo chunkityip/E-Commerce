@@ -18,7 +18,7 @@ public interface ProductService {
 
     Response getAllProducts();
 
-    Response getProductsByCategory(Long productId);
+    Response getProductsByCategory(Long categoryId);
 
     Response searchProduct(String searchValue);
 
