@@ -20,7 +20,7 @@ public class Payment {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
-    private  Order order;
+    private Order order;
 
     @Column(name = "created_at")
     private final LocalDateTime createdAt = LocalDateTime.now();

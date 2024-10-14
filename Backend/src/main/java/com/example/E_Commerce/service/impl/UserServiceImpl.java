@@ -77,9 +77,8 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-
     @Override
-    public Response getAllUser(UserDto registrationRequest) {
+    public Response getAllUsers() {
         List<User> users = userRepo.findAll();
         List<UserDto> userDto = users.stream()
                 .map(entityDtoMapper::mapUserToDtoBasic)
@@ -91,6 +90,7 @@ public class UserServiceImpl implements UserService {
                 .userList(userDto)
                 .build();
     }
+
 
     @Override
     public User getLoginUser() {
@@ -114,3 +114,5 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 }
+
+

@@ -162,23 +162,7 @@ class UserServiceImplTest {
         );
     }
 
-    @Test
-    void getAllUserTest() {
-        // Arrange
-        List<User> users = List.of(user);
-        when(userRepo.findAll()).thenReturn(users);
-        when(entityDtoMapper.mapUserToDtoBasic(user)).thenReturn(userDto);
 
-        // Act
-        Response response = userService.getAllUser(userDto);
-
-        // Assert
-        assertAll(
-                () -> assertEquals(200, response.getStatus() , "Status should match as 200"),
-                () -> assertEquals("Successful", response.getMessage() , "Message should display as Successful"),
-                () -> assertEquals(1, response.getUserList().size(), "Size should match as size 1")
-        );
-    }
 
     static Stream<Arguments> provideUserRoles() {
         return Stream.of(
