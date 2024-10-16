@@ -1,6 +1,6 @@
-services:
+ervices:
   postgres:
-    container_name: amazon-postgres-sql
+    containser_name: amazon-postgres-sql
     image: postgres
     environment:
       POSTGRES_USER: root
