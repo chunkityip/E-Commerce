@@ -8,6 +8,10 @@ import { Component } from '@angular/core';
   styleUrl: './admin.component.css'
 })
 export class AdminComponent {
+  constructor(private router: Router){}
 
+  navigateTo(path: string): void{
+      this.router.navigate(([path]))
+  }
 
 }
